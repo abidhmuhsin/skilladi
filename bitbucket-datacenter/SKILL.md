@@ -42,6 +42,14 @@ Read PR metadata and changed files:
 node "scripts/bitbucket/get-pr-info.mjs" --prId <id> --repo <repo>
 ```
 
+Start an opt-in PR review session:
+
+```bash
+node "scripts/bitbucket/start-pr-review.mjs" --prId <id> --repo <repo>
+```
+
+This gathers PR metadata, changed files, activity/comment state, Jira context when available, and the annotated diff. Pass `--noDiff` to collect only the review context without the full diff.
+
 Read PR diffs:
 
 ```bash
@@ -120,6 +128,7 @@ node "scripts/jira/get-jira-issue.mjs" --issueKey PROJ-1234
 | Goal | Script |
 |---|---|
 | Get PR metadata and changed files | `scripts/bitbucket/get-pr-info.mjs` |
+| Start PR review session | `scripts/bitbucket/start-pr-review.mjs` |
 | Full diff for all files | `scripts/bitbucket/get-pr-diff.mjs` |
 | Diff for one file | `scripts/bitbucket/get-file-diff.mjs` |
 | File content from PR source or target side | `scripts/bitbucket/get-file-content.mjs` |
@@ -131,6 +140,14 @@ node "scripts/jira/get-jira-issue.mjs" --issueKey PROJ-1234
 | Read or update PR title/description | `scripts/bitbucket/update-pr.mjs` |
 | List pull requests | `scripts/bitbucket/list-prs.mjs` |
 | Fetch Jira issue | `scripts/jira/get-jira-issue.mjs` |
+
+## Review Workflow
+
+Use `start-pr-review.mjs` when the user explicitly asks to review a PR or prepare PR feedback. Keep ordinary PR lookups on the general-purpose scripts.
+
+- Load `references/review-workflow.md` when performing a full code review or preparing review feedback.
+- Load `references/commenting-guide.md` before posting, replying to, editing, resolving, or reopening comments.
+- Do not post an overall summary comment without user confirmation.
 
 ## Ad-hoc Queries
 
