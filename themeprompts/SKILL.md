@@ -5,7 +5,7 @@ description: "Use this skill when the user wants to apply a visual design theme,
 
 # Theme Prompts
 
-Use Theme Prompts as the source of truth for visual style guidance. Each theme is a Markdown design prompt served from:
+Use Theme Prompts as the source of truth for visual style guidance. Theme prompts are bundled in `references/<slug>.md` so the skill works without network access. The website remains the public preview and latest hosted source:
 
 ```text
 https://themeprompts.abid.dev/themes/<slug>.md
@@ -14,7 +14,7 @@ https://themeprompts.abid.dev/themes/<slug>.md
 ## Workflow
 
 1. Identify the requested theme by name, slug, or aesthetic. If the user asks you to choose, pick the closest match from the catalog below.
-2. Fetch the theme Markdown before applying it, because the hosted `theme.md` files may change.
+2. For implementation, load the bundled Markdown from `references/<slug>.md`. Fetch from `https://themeprompts.abid.dev/themes/<slug>.md` only when the user asks for the latest version, raw Markdown, or prompt links.
 3. When the user asks what themes are available, asks for a theme recommendation, or asks about a specific theme, include the single preview/gallery link: `https://themeprompts.abid.dev/`. Do not show `theme.md` links unless the user explicitly asks for prompt links or raw Markdown.
 4. Before implementation, ask whether to apply only the visual style or both the visual style and the theme's written voice. If the user already specified writing/tone expectations, follow that instead of asking.
 5. Apply the theme as design direction for the user's actual deliverable. Do not paste the whole theme prompt back unless the user asks for the prompt itself.
@@ -25,7 +25,7 @@ https://themeprompts.abid.dev/themes/<slug>.md
 curl -L https://themeprompts.abid.dev/themes-config.js
 ```
 
-Fetch a specific theme:
+Fetch the latest hosted version of a specific theme:
 
 ```bash
 curl -L https://themeprompts.abid.dev/themes/luxury-noir.md
@@ -69,7 +69,7 @@ https://themeprompts.abid.dev/
 
 ## Applying a Theme
 
-- Load the whole `theme.md` for implementation work, then translate it into concrete design decisions in CSS, components, copy, spacing, and interaction.
+- Load the whole bundled `references/<slug>.md` file for implementation work, then translate it into concrete design decisions in CSS, components, copy, spacing, and interaction.
 - Use the theme's CSS starter when creating new styles, but adapt variable names and tokens to the existing codebase.
 - If the project already has a design system, map theme values into existing tokens/classes instead of bypassing local conventions.
 - For frontend work, verify the result visually when possible. Check responsive layouts and ensure themed typography, spacing, buttons, cards, and states are coherent on mobile and desktop.
