@@ -1,6 +1,6 @@
 ---
 name: themeprompts
-description: "Use this skill when the user wants to apply a visual design theme, choose a Theme Prompts aesthetic, use themes from themeprompts.abid.dev, fetch a theme.md prompt, or style a site/app/page with a named theme such as Luxury Noir, Romantic Bloom, Brutalist, Dark Academia, Y2K Candy, or another Theme Prompts theme. Trigger phrases include: themeprompts, theme prompts, themes, use a theme, apply a theme, pick a vibe, theme.md, themeprompts.abid.dev."
+description: "Use this skill when the user wants to apply a visual design theme, choose a Theme Prompts aesthetic, use themes from themeprompts.abid.dev, fetch a theme.md prompt, create a new custom theme prompt, or style a site/app/page with a named theme such as Luxury Noir, Romantic Bloom, Brutalist, Dark Academia, Y2K Candy, or another Theme Prompts theme. Trigger phrases include: themeprompts, theme prompts, themes, use a theme, apply a theme, create a theme, custom theme, pick a vibe, theme.md, themeprompts.abid.dev."
 ---
 
 # Theme Prompts
@@ -19,7 +19,8 @@ https://themeprompts.abid.dev/themes/<slug>.md
 4. Before implementation, ask whether to apply only the visual style or both the visual style and the theme's written voice. If the user already specified writing/tone expectations, follow that instead of asking.
 5. Apply the theme as design direction for the user's actual deliverable. Do not paste the whole theme prompt back unless the user asks for the prompt itself.
 6. Preserve product/domain usability over decorative fidelity. Use the theme's palette, typography, layout principles, component patterns, and motion while still following any repo design system and frontend constraints. Apply the theme's written voice only when the user chooses it or has already requested it.
-7. If the named theme is not in the catalog, check the site or manifest first:
+7. If the user asks to create a new custom theme, follow the Custom Theme Creation workflow below.
+8. If the named theme is not in the catalog, check the site or manifest first:
 
 ```bash
 curl -L https://themeprompts.abid.dev/themes-config.js
@@ -74,6 +75,22 @@ https://themeprompts.abid.dev/
 - If the project already has a design system, map theme values into existing tokens/classes instead of bypassing local conventions.
 - For frontend work, verify the result visually when possible. Check responsive layouts and ensure themed typography, spacing, buttons, cards, and states are coherent on mobile and desktop.
 - For generated copy, follow the theme's voice and writing guidance only when the user chooses "visual style and written voice" or explicitly asks for writing changes.
+
+## Custom Theme Creation
+
+When the user wants to create a new theme, generate a complete `theme.md` style prompt following the same structure as the bundled references.
+
+Use this workflow:
+
+1. Ask for the desired vibe, audience/use case, and any must-use or must-avoid colors/fonts if they are not already clear.
+2. Read 2-3 bundled references that are closest to the requested vibe to match the expected depth and section structure.
+3. Create an original theme with a clear name and slug. Avoid copying a bundled theme with only superficial color changes.
+4. Include these sections: `Overview`, `Color Palette`, `Typography`, `Visual Language`, `Layout Principles`, `Component Patterns`, `Motion & Interaction`, `Voice & Copy Tone`, and `CSS Starter`.
+5. Make the palette practical: define background, surface, primary/secondary text, muted text, accent(s), border, glow/shadow, and a ratio such as `70% base / 20% surface / 10% accent`.
+6. Make component guidance implementation-ready for buttons, cards, inputs, badges, and dividers.
+7. If the user wants to save it into the skill repo, write it to `references/<slug>.md` and add it to the Theme Catalog in `SKILL.md`. Otherwise, return the generated Markdown only.
+
+For custom themes, do not claim the theme exists on `themeprompts.abid.dev` unless it has been published there. Use local references for saved custom themes.
 
 ## Implementation Scope
 
