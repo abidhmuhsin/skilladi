@@ -88,9 +88,54 @@ Use this workflow:
 4. Include these sections: `Overview`, `Color Palette`, `Typography`, `Visual Language`, `Layout Principles`, `Component Patterns`, `Motion & Interaction`, `Voice & Copy Tone`, and `CSS Starter`.
 5. Make the palette practical: define background, surface, primary/secondary text, muted text, accent(s), border, glow/shadow, and a ratio such as `70% base / 20% surface / 10% accent`.
 6. Make component guidance implementation-ready for buttons, cards, inputs, badges, and dividers.
-7. If the user wants to save it into the skill repo, write it to `references/<slug>.md` and add it to the Theme Catalog in `SKILL.md`. Otherwise, return the generated Markdown only.
+7. After generating the theme prompt, ask what to do next unless the user already specified the next action. Do not edit files before this confirmation.
+8. If the user chooses to try/use it now, apply the generated theme to their current project without saving it to the skill catalog unless they also choose saving.
+9. If the user confirms saving, write it to `references/<slug>.md` and add it to the Theme Catalog in `SKILL.md`. Otherwise, return the generated Markdown only.
+
+Use this next-step prompt:
+
+```text
+What would you like to do with this theme?
+
+1. Try it now in the current project
+2. Save it to the local Theme Prompts catalog
+3. Do both
+```
 
 For custom themes, do not claim the theme exists on `themeprompts.abid.dev` unless it has been published there. Use local references for saved custom themes.
+
+## Contributing Custom Themes
+
+When the user wants to contribute a custom theme back to the skill repo, help prepare a small, reviewable change.
+
+Contribution checklist:
+
+1. Save the theme prompt at `references/<slug>.md`.
+2. Add one Theme Catalog row in `SKILL.md` with the theme name, slug, and a concise mood/fit description.
+3. Check that the theme Markdown follows the required custom theme sections.
+4. Verify the slug is lowercase kebab-case and does not conflict with an existing bundled reference.
+5. Prepare a branch, commit, and PR summary if the user asks.
+
+Suggested commands:
+
+```bash
+git checkout -b add-theme-<slug>
+git add themeprompts/SKILL.md themeprompts/references/<slug>.md
+git commit -m "Add <Theme Name> theme prompt"
+```
+
+Suggested PR body:
+
+```markdown
+## Summary
+- Add the <Theme Name> theme prompt
+- Register it in the Theme Prompts catalog
+
+## Notes
+- This adds the prompt to the skill repo only; website publication is separate.
+```
+
+Do not push branches, open PRs, or publish to the website unless the user explicitly asks. Do not say a contributed theme is available on `themeprompts.abid.dev` until it has been deployed there.
 
 ## Implementation Scope
 
