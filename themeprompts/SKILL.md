@@ -15,9 +15,11 @@ https://themeprompts.abid.dev/themes/<slug>.md
 
 1. Identify the requested theme by name, slug, or aesthetic. If the user asks you to choose, pick the closest match from the catalog below.
 2. Fetch the theme Markdown before applying it, because the hosted `theme.md` files may change.
-3. Apply the theme as design direction for the user's actual deliverable. Do not paste the whole theme prompt back unless the user asks for the prompt itself.
-4. Preserve product/domain usability over decorative fidelity. Use the theme's palette, typography, layout principles, component patterns, motion, and copy tone while still following any repo design system and frontend constraints.
-5. If the named theme is not in the catalog, check the site or manifest first:
+3. When the user asks what themes are available, asks for a theme recommendation, or asks about a specific theme, include the single preview/gallery link: `https://themeprompts.abid.dev/`. Do not show `theme.md` links unless the user explicitly asks for prompt links or raw Markdown.
+4. Before implementation, ask whether to apply only the visual style or both the visual style and the theme's written voice. If the user already specified writing/tone expectations, follow that instead of asking.
+5. Apply the theme as design direction for the user's actual deliverable. Do not paste the whole theme prompt back unless the user asks for the prompt itself.
+6. Preserve product/domain usability over decorative fidelity. Use the theme's palette, typography, layout principles, component patterns, and motion while still following any repo design system and frontend constraints. Apply the theme's written voice only when the user chooses it or has already requested it.
+7. If the named theme is not in the catalog, check the site or manifest first:
 
 ```bash
 curl -L https://themeprompts.abid.dev/themes-config.js
@@ -27,6 +29,12 @@ Fetch a specific theme:
 
 ```bash
 curl -L https://themeprompts.abid.dev/themes/luxury-noir.md
+```
+
+Open the public preview/gallery:
+
+```text
+https://themeprompts.abid.dev/
 ```
 
 ## Theme Catalog
@@ -65,7 +73,32 @@ curl -L https://themeprompts.abid.dev/themes/luxury-noir.md
 - Use the theme's CSS starter when creating new styles, but adapt variable names and tokens to the existing codebase.
 - If the project already has a design system, map theme values into existing tokens/classes instead of bypassing local conventions.
 - For frontend work, verify the result visually when possible. Check responsive layouts and ensure themed typography, spacing, buttons, cards, and states are coherent on mobile and desktop.
-- For generated copy, follow the theme's voice and copy tone section.
+- For generated copy, follow the theme's voice and writing guidance only when the user chooses "visual style and written voice" or explicitly asks for writing changes.
+
+## Implementation Scope
+
+Before changing files, ask a concise question unless the user already made the scope clear:
+
+```text
+Should I apply just the visual style, or also adjust the wording to match the theme's written voice?
+```
+
+- Just the visual style: apply palette, typography, spacing, layout, components, imagery direction, and motion without rewriting product text.
+- Visual style and written voice: apply the visual style and revise generated or existing UI text to match the theme's voice.
+
+## Answering Theme Queries
+
+When the user is browsing, comparing, or asking for links, use one overall gallery/preview link and a compact two-column table with theme name and mood/fit. Do not repeat the preview link for each theme, and do not show direct `theme.md` links unless the user explicitly asks for prompt links or raw Markdown.
+
+```markdown
+Preview gallery: https://themeprompts.abid.dev/
+
+| Theme | Mood |
+|---|---|
+| Luxury Noir | Dark luxury, gold accents, premium editorial presence |
+```
+
+For a full list, include all catalog themes only when the user asks for all themes. For recommendations, include only the recommended themes. Use the single gallery link for visual preview because theme selection happens on the site. Fetch direct `theme.md` links internally for implementation; show them to the user only when they ask for prompt links or raw Markdown.
 
 ## Choosing a Theme
 
