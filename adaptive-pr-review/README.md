@@ -1,4 +1,4 @@
-# pr-review Skill
+# adaptive-pr-review Skill
 
 A local Codex skill for reviewing and managing BitBucket pull requests. Scripts call the BitBucket REST API directly with Node.js. No MCP server setup is required.
 
@@ -80,6 +80,17 @@ node scripts/jira/get-jira-issue.mjs --issueKey PROJ-1234
 ```
 
 Default project key is `PROJ`. Pass `--project <key>` to override.
+
+## Review Memory
+
+The skill includes a lightweight review-memory loop in [references/review-patterns.md](./references/review-patterns.md).
+
+- Read `Current Review Patterns` before each PR review.
+- Record user corrections, false positives, tone adjustments, and repeated checks in `Candidate Patterns`.
+- Move repeated lessons into `Current Review Patterns`, then fold them back into `SKILL.md` or the reference guides when they become stable.
+- Keep entries in a script-friendly format: `### YYYY-MM-DD | Short label` with stable field names below.
+
+This keeps review behavior consistent across sessions without adding new scripts or external storage.
 
 ## Directory Structure
 

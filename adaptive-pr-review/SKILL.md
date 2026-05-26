@@ -1,9 +1,9 @@
 ---
-name: pr-review
+name: adaptive-pr-review
 description: "Use this skill when reviewing or managing BitBucket pull requests: inspect PR metadata and diffs, post inline comments, reply to comments, edit or resolve comment threads, create pull requests, update PR title or description, check PR activities, summarize PR changes, or cross-reference Jira issues. Trigger phrases include: review PR, review pull request, check PR, comment on PR, post PR feedback, create a PR, create a pull request, what changed in PR, look at PR, summarize PR, PR activities."
 ---
 
-# BitBucket PR Review Skill
+# Adaptive BitBucket PR Review Skill
 
 Use the Node.js scripts in this skill to review and manage BitBucket pull requests.
 
@@ -44,6 +44,11 @@ node "scripts/bitbucket/get-pr-info.mjs" --prId <id> --repo <repo>
 
 This returns PR metadata, description, and a changed-files checklist. Run it once per PR session.
 
+Before reviewing diffs or drafting comments, load the `Current Review Patterns` section from `references/review-patterns.md`.
+
+- Apply any current patterns in that file during the review.
+- If a pattern conflicts with the current PR context, prefer the PR context and record the mismatch after the review.
+
 If the PR description contains a Jira key such as `PROJ-1234` and `JIRA_TOKEN` is set, run:
 
 ```bash
@@ -63,6 +68,64 @@ node "scripts/bitbucket/get-activities.mjs" --prId <id> --repo <repo>
 ```
 
 This exposes existing comment IDs, replies, approvals, and resolved thread state.
+
+## Review Memory Loop
+
+This skill should evolve from actual review sessions. Treat `references/review-patterns.md` as the skill's review memory file.
+
+Capture a note when any of these happen during a review:
+
+- The user corrects a technical claim or severity level.
+- The user rewrites comment tone or asks for a different framing style.
+- The user rejects a false positive or points out missing context.
+- The same kind of issue appears across multiple PRs.
+- A one-off manual check proves consistently useful.
+
+Record the note when the signal appears. Do not rely on end-of-review memory for corrections that affect accuracy or tone.
+
+During a normal PR review, the default is capture first, update the skill later. Do not rewrite this skill mid-review unless the user explicitly asks for that change or the current guidance is actively causing incorrect review output.
+
+After the review, append or complete the entry in `references/review-patterns.md` using this format:
+
+```markdown
+## Candidate Patterns
+
+### 2026-05-26 | Short label
+- Context: What PR or situation triggered this.
+- Lesson: What was wrong, missing, or unusually effective.
+- Next pass: The concrete adjustment to try in future reviews.
+- State: CANDIDATE
+- Tags: severity, false-positive
+```
+
+Graduation rule:
+
+1. If the same lesson recurs twice, move it from `Candidate Patterns` to `Current Review Patterns`.
+2. When a pattern proves broadly reliable, fold it into the relevant permanent guidance in this skill, usually `SKILL.md`, `references/review-workflow.md`, or `references/commenting-guide.md`.
+3. Once a pattern has been folded into the permanent guidance, either keep it in `Current Review Patterns` as an active reminder or move it to `Archived Patterns` with a note such as `Codified in review-workflow.md`.
+4. If a pattern becomes stale, too narrow, or misleading, move it to `Archived Patterns` with a brief reason.
+
+### Pattern Review Trigger
+
+Do not interrupt an active PR review to reconcile pattern notes.
+
+After the review is complete, inspect only the `Candidate Patterns` section of `references/review-patterns.md`. Prefer a targeted text search or helper script instead of reading the whole file when possible.
+
+Run a pattern cleanup pass only when one of these is true:
+
+- `Candidate Patterns` has 5 or more pattern entries.
+- The oldest pattern entry in `Candidate Patterns` is more than 14 days old.
+
+If a cleanup pass is needed:
+
+1. Merge duplicate or closely related candidate entries.
+2. Promote repeated lessons into `Current Review Patterns`.
+3. Fold broadly reliable patterns into `SKILL.md`, `references/review-workflow.md`, or `references/commenting-guide.md` when appropriate.
+4. Move stale, disproven, or overly narrow entries to `Archived Patterns`.
+
+This review is a maintenance step, not part of the active PR-review flow.
+
+Do not frame this as model training. It is a maintained file-based memory loop: the skill carries forward review lessons in repo files and reuses them in later sessions.
 
 ## Commenting Rules
 
@@ -148,8 +211,27 @@ Omit `--title` and `--description` to read. Provide either or both to update.
 
 ## When to Load References
 
+- Load the `Current Review Patterns` section from `references/review-patterns.md` at the start of every review session.
 - Load `references/commenting-guide.md` before posting, replying to, editing, resolving, or reopening comments.
 - Load `references/review-workflow.md` when performing a full code review or preparing review feedback.
+
+## Pattern File Maintenance
+
+Keep `references/review-patterns.md` structured enough for both human review and future script-based lookup.
+
+- Add new entries as they happen; do not batch from memory if accuracy matters.
+- Prefer short entries tied to a concrete review mistake, correction, or repeated win.
+- Keep each pattern entry as one `###` block with the same field names.
+- When a pattern is superseded, codified elsewhere, or no longer useful, move it to `Archived Patterns` instead of leaving stale guidance in the active sections.
+
+## Compatibility Rule
+
+Future edits to this skill must preserve compatibility with `references/review-patterns.md`.
+
+- Do not remove the instruction to load the pattern file at review start unless the memory mechanism is being replaced in the same change.
+- Do not rename `Current Review Patterns`, `Candidate Patterns`, or `Archived Patterns` without updating the related workflow guidance.
+- Do not change the entry field names or heading format without updating any helper logic that depends on them.
+- If the pattern file structure changes, migrate existing entries in the same update rather than resetting the file.
 
 ## Ad-hoc Queries
 

@@ -5,7 +5,7 @@ Guidance for Codex agents working in this repository.
 ## Repository Layout
 
 - `bitbucket-datacenter/`: Bitbucket Data Center skill and scripts.
-- `pr-review/`: PR review skill and scripts.
+- `adaptive-pr-review/`: Adaptive PR review skill and scripts.
 - `themeprompts/`: Theme prompt skill.
 
 Keep changes scoped to the relevant skill folder unless the task explicitly requires cross-skill updates.
@@ -41,7 +41,7 @@ Prefix commit messages with the skill folder name, matching the existing history
 Examples:
 
 - `bitbucket: refactor start-pr-review Jira guidance`
-- `pr-review: sync helper scripts with bitbucket-datacenter`
+- `adaptive-pr-review: sync helper scripts with bitbucket-datacenter`
 - `themeprompts: refine custom theme workflow`
 
 If a change touches more than one skill, either:
