@@ -4,7 +4,7 @@
  *
  * Comment IDs shown can be used with --parentId in comment-pr.mjs or update-comment.mjs.
  */
-import { bbRequest, parseArgs, require_args, DEFAULT_PROJECT } from '../lib/bb.mjs';
+import { bbPaginatedRequest, parseArgs, require_args, DEFAULT_PROJECT } from '../lib/bb.mjs';
 
 const args = parseArgs();
 require_args(args, 'prId', 'repo');
@@ -13,11 +13,11 @@ const project = args.project || DEFAULT_PROJECT;
 const repo = args.repo;
 const prId = args.prId;
 
-const data = await bbRequest(
-  `/projects/${project}/repos/${repo}/pull-requests/${prId}/activities?limit=100`
+const activities = await bbPaginatedRequest(
+  `/projects/${project}/repos/${repo}/pull-requests/${prId}/activities`
 );
 
-if (!data.values || data.values.length === 0) {
+if (activities.values.length === 0) {
   console.log('No activities found.');
   process.exit(0);
 }
@@ -45,9 +45,9 @@ function formatCommentTree(comment, depth, anchor) {
   return repliesStr ? `${head}\n${repliesStr}` : head;
 }
 
-console.log(`Found ${data.values.length} activities:\n`);
+console.log(`Found ${activities.total} activities:\n`);
 
-for (const activity of data.values) {
+for (const activity of activities.values) {
   const date = new Date(activity.createdDate).toISOString();
   const user = activity.user?.displayName || 'System';
 

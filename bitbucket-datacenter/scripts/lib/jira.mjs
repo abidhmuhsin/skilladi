@@ -1,26 +1,36 @@
 /**
  * Jira API helper — imported by Jira tool scripts.
- * Requires JIRA_TOKEN env var (optional — prints warning if absent).
+ * Requires JIRA_TOKEN env var.
  *
  * Auth: always Bearer token (no Basic auth for Jira).
  * POST/PUT requests include X-Atlassian-Token: no-check header.
  */
 
-const JIRA_BASE_URL = process.env.JIRA_BASE_URL || 'https://jira.hosted-server.com';
-const BASE_URL = `${JIRA_BASE_URL.replace(/\/$/, '')}/rest/api/2`;
-
 export function getJiraToken() {
   const token = process.env.JIRA_TOKEN;
   if (!token) {
-    console.error('Warning: JIRA_TOKEN environment variable is not set. Jira integration is optional.');
+    console.error('Error: JIRA_TOKEN environment variable is not set.');
+    console.error('Example: JIRA_TOKEN=your_jira_bearer_token');
     process.exit(1);
   }
   return token;
 }
 
+function getBaseUrl() {
+  const jiraBaseUrl = process.env.JIRA_BASE_URL;
+  if (!jiraBaseUrl) {
+    console.error('Error: JIRA_BASE_URL environment variable is not set.');
+    console.error('Example: JIRA_BASE_URL=https://jira.example.com');
+    process.exit(1);
+  }
+
+  return `${jiraBaseUrl.replace(/\/$/, '')}/rest/api/2`;
+}
+
 export async function jiraRequest(endpoint, { method = 'GET', body = undefined } = {}) {
+  const baseUrl = getBaseUrl();
   const token = getJiraToken();
-  const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
 
   const headers = {
     Authorization: `Bearer ${token}`,

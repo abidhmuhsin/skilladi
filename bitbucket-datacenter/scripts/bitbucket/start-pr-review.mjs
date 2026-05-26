@@ -4,7 +4,7 @@
  *
  * Usage: node start-pr-review.mjs --prId <id> --repo <repo> [--project <key>] [--noDiff]
  */
-import { bbRequest, parseArgs, require_args, DEFAULT_PROJECT, annotatedDiff } from '../lib/bb.mjs';
+import { bbRequest, bbPaginatedRequest, parseArgs, require_args, DEFAULT_PROJECT, annotatedDiff } from '../lib/bb.mjs';
 
 const args = parseArgs();
 require_args(args, 'prId', 'repo');
@@ -14,6 +14,19 @@ const repo = args.repo;
 const prId = args.prId;
 const base = `/projects/${project}/repos/${repo}/pull-requests/${prId}`;
 const includeDiff = !args.noDiff;
+const includeFullContext = args.full === true || args.full === 'true';
+const maxFiles = includeFullContext ? Infinity : parsePositiveInt(args.maxFiles, 50, '--maxFiles');
+const maxActivities = includeFullContext ? Infinity : parsePositiveInt(args.maxActivities, 100, '--maxActivities');
+
+function parsePositiveInt(value, fallback, name) {
+  if (value === undefined) return fallback;
+  const parsed = parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    console.error(`${name} must be a positive integer`);
+    process.exit(1);
+  }
+  return parsed;
+}
 
 function pathFromChange(change) {
   return (typeof change.path?.toString === 'string' ? change.path.toString : null)
@@ -52,7 +65,8 @@ function formatCommentTree(comment, depth, anchor) {
 function formatActivities(data) {
   if (!data.values || data.values.length === 0) return 'No activities found.';
 
-  const lines = [`Found ${data.values.length} activities:`];
+  const totalLabel = data.complete ? `${data.total}` : `at least ${data.total}`;
+  const lines = [`Found ${totalLabel} activities${data.truncated ? ` (showing first ${data.values.length})` : ''}:`];
   for (const activity of data.values) {
     const date = new Date(activity.createdDate).toISOString();
     const user = activity.user?.displayName || 'System';
@@ -78,7 +92,11 @@ ${f.description ? `\nDescription:\n${f.description}` : '\nDescription: (No descr
 }
 
 async function optionalJiraRequest(endpoint) {
-  const jiraBaseUrl = (process.env.JIRA_BASE_URL || 'https://jira.hosted-server.com').replace(/\/$/, '');
+  if (!process.env.JIRA_BASE_URL) {
+    throw new Error('JIRA_BASE_URL environment variable is not set.');
+  }
+
+  const jiraBaseUrl = process.env.JIRA_BASE_URL.replace(/\/$/, '');
   const url = `${jiraBaseUrl}/rest/api/2${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   const res = await fetch(url, {
     headers: {
@@ -98,14 +116,17 @@ async function optionalJiraRequest(endpoint) {
 
 const [pr, changes, activities, diffText] = await Promise.all([
   bbRequest(base),
-  bbRequest(`${base}/changes?limit=100`),
-  bbRequest(`${base}/activities?limit=100`),
+  bbPaginatedRequest(`${base}/changes`, { maxItems: maxFiles }),
+  bbPaginatedRequest(`${base}/activities`, { maxItems: maxActivities }),
   includeDiff ? bbRequest(`${base}/diff?withComments=false`, { textResponse: true }) : Promise.resolve(null),
 ]);
 
 const files = (changes.values || []).map((f, i) => `${i + 1}. ${pathFromChange(f)} (${f.type || 'MODIFIED'})`);
 const jiraKey = jiraKeyFrom(`${pr.title}\n${pr.description || ''}`);
 let jiraSection = 'No Jira key found in PR title or description.';
+const changedFilesSummary = changes.truncated
+  ? `Showing first ${changes.values.length} of at least ${changes.total} changed files. Re-run with --full or a higher --maxFiles value for the complete list.`
+  : `Showing all ${changes.total} changed files.`;
 
 if (jiraKey && process.env.JIRA_TOKEN) {
   try {
@@ -137,6 +158,7 @@ ${jiraSection}
 
 ## Changed Files Checklist
 - Use this list to track which files have been reviewed.
+${changedFilesSummary}
 ${files.join('\n')}
 
 ## Existing PR Activity
@@ -149,5 +171,6 @@ ${includeDiff ? annotatedDiff(diffText) || '(no diff content available)' : 'Skip
 1. Review the diff and changed-files checklist before commenting.
 2. Use get-file-diff.mjs for any file missing from this output or needing a narrower view.
 3. Use get-file-content.mjs only when the diff is insufficient to verify a technical claim.
-4. Load references/review-workflow.md for review expectations.
-5. Load references/commenting-guide.md before posting, replying to, editing, resolving, or reopening comments.`);
+4. Re-run with --full, --maxFiles, or --maxActivities when the review context is intentionally capped.
+5. Load references/review-workflow.md for review expectations.
+6. Load references/commenting-guide.md before posting, replying to, editing, resolving, or reopening comments.`);

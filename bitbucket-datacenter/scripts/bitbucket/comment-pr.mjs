@@ -15,7 +15,7 @@ const repo = args.repo;
 const prId = args.prId;
 
 const payload = {
-  text: `${args.comment} ..`,
+  text: args.comment,
   state: 'PENDING',
 };
 

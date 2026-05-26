@@ -11,14 +11,14 @@ Use the bundled Node.js scripts for common Bitbucket Data Center and related Jir
 
 Set `BITBUCKET_TOKEN` before running Bitbucket scripts.
 
-- `username:apppassword` is encoded automatically as Basic auth.
-- A bare token is sent as `Bearer <token>`.
+- A bearer token is sent as `Bearer <token>`.
+- `username:app_password` is encoded automatically as Basic auth.
 
-Optionally set `BITBUCKET_BASE_URL` to the Bitbucket server root URL, for example `https://bitbucket.example.com`. Do not include `/rest/api/1.0`; the scripts add that path automatically.
+Set `BITBUCKET_BASE_URL` to the Bitbucket server root URL, for example `https://bitbucket.example.com`. Do not include `/rest/api/1.0`; the scripts add that path automatically.
 
 For Jira lookups, set `JIRA_TOKEN`.
 
-Optionally set `JIRA_BASE_URL` to the Jira server root URL, for example `https://jira.example.com`. Do not include `/rest/api/2`; the scripts add that path automatically.
+Set `JIRA_BASE_URL` to the Jira server root URL, for example `https://jira.example.com`. Do not include `/rest/api/2`; the scripts add that path automatically.
 
 Node 18+ is required. Scripts live under:
 
@@ -49,6 +49,7 @@ node "scripts/bitbucket/start-pr-review.mjs" --prId <id> --repo <repo>
 ```
 
 This gathers PR metadata, changed files, activity/comment state, Jira context when available, and the annotated diff. Pass `--noDiff` to collect only the review context without the full diff.
+By default it caps review context at `--maxFiles 50` and `--maxActivities 100`; use `--full` or raise those limits when needed.
 
 Read PR diffs:
 

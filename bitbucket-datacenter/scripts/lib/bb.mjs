@@ -3,12 +3,9 @@
  * Requires BITBUCKET_TOKEN env var.
  *
  * Token formats:
- *   username:apppassword  →  Basic base64(username:apppassword)
- *   bare token            →  Bearer <token>
+ *   bearer token           -> Bearer <token>
+ *   username:app_password  -> Basic base64(username:app_password)
  */
-
-const _BB_BASE = (process.env.BITBUCKET_BASE_URL || 'https://bitbucket.hosted-server.com').replace(/\/$/, '');
-const BASE_URL = _BB_BASE.includes('/rest/api') ? _BB_BASE : `${_BB_BASE}/rest/api/1.0`;
 
 export const DEFAULT_PROJECT = 'PROJ';
 
@@ -18,19 +15,33 @@ function buildAuthHeader(token) {
     : `Bearer ${token}`;
 }
 
+function getBaseUrl() {
+  const bbBaseUrl = process.env.BITBUCKET_BASE_URL;
+  if (!bbBaseUrl) {
+    console.error('Error: BITBUCKET_BASE_URL environment variable is not set.');
+    console.error('Example: BITBUCKET_BASE_URL=https://bitbucket.example.com');
+    process.exit(1);
+  }
+
+  const base = bbBaseUrl.replace(/\/$/, '');
+  return base.includes('/rest/api') ? base : `${base}/rest/api/1.0`;
+}
+
 export function getToken() {
   const token = process.env.BITBUCKET_TOKEN;
   if (!token) {
     console.error('Error: BITBUCKET_TOKEN environment variable is not set.');
-    console.error('Set it as: username:apppassword (Basic auth) or a Bearer token.');
+    console.error('Example: BITBUCKET_TOKEN=your_bearer_token');
+    console.error('Basic auth: BITBUCKET_TOKEN=username:app_password');
     process.exit(1);
   }
   return token;
 }
 
 export async function bbRequest(endpoint, { method = 'GET', body = undefined, textResponse = false } = {}) {
+  const baseUrl = getBaseUrl();
   const token = getToken();
-  const url = `${BASE_URL}${endpoint}`;
+  const url = `${baseUrl}${endpoint}`;
   const headers = {
     Authorization: buildAuthHeader(token),
     ...(textResponse ? { Accept: 'text/plain' } : { 'Content-Type': 'application/json', Accept: 'application/json' }),
@@ -46,6 +57,48 @@ export async function bbRequest(endpoint, { method = 'GET', body = undefined, te
 
   if (res.status === 204) return null;
   return textResponse ? res.text() : res.json();
+}
+
+export async function bbPaginatedRequest(endpoint, { limit = 100, maxItems = Infinity } = {}) {
+  const values = [];
+  let start = 0;
+  let total = 0;
+  let isLastPage = false;
+  let nextPageStart;
+  let truncated = false;
+
+  while (!isLastPage) {
+    const sep = endpoint.includes('?') ? '&' : '?';
+    const page = await bbRequest(`${endpoint}${sep}limit=${limit}&start=${start}`);
+    const pageValues = page.values || [];
+    total += pageValues.length;
+
+    if (values.length < maxItems) {
+      const remaining = maxItems - values.length;
+      values.push(...pageValues.slice(0, remaining));
+      truncated = truncated || pageValues.length > remaining;
+    } else {
+      truncated = true;
+    }
+
+    isLastPage = page.isLastPage !== false;
+    nextPageStart = page.nextPageStart;
+
+    if (truncated || nextPageStart === undefined) {
+      break;
+    }
+
+    start = nextPageStart;
+  }
+
+  return {
+    values,
+    total,
+    isLastPage,
+    nextPageStart,
+    truncated,
+    complete: isLastPage && !truncated,
+  };
 }
 
 /**
