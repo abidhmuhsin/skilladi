@@ -77,6 +77,9 @@ node scripts/bitbucket/update-comment.mjs --prId 123 --repo my-repo --commentId 
 
 # Get a Jira issue
 node scripts/jira/get-jira-issue.mjs --issueKey PROJ-1234
+
+# Summarize review memory
+node scripts/memory/review-memory.mjs
 ```
 
 Default project key is `PROJ`. Pass `--project <key>` to override.
@@ -89,6 +92,13 @@ The skill includes a lightweight review-memory loop in [references/review-patter
 - Record user corrections, false positives, tone adjustments, and repeated checks in `Candidate Patterns`.
 - Move repeated lessons into `Current Review Patterns`, then fold them back into `SKILL.md` or the reference guides when they become stable.
 - Keep entries in a script-friendly format: `### YYYY-MM-DD | Short label` with stable field names below.
+
+Helper script:
+
+```bash
+node scripts/memory/review-memory.mjs
+node scripts/memory/review-memory.mjs --section current
+```
 
 This keeps review behavior consistent across sessions without adding new scripts or external storage.
 

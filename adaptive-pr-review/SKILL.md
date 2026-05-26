@@ -81,6 +81,8 @@ Capture a note when any of these happen during a review:
 - The same kind of issue appears across multiple PRs.
 - A one-off manual check proves consistently useful.
 
+Store reusable review lessons, not raw Jira details or PR-specific business context unless they generalize into a future review pattern.
+
 Record the note when the signal appears. Do not rely on end-of-review memory for corrections that affect accuracy or tone.
 
 During a normal PR review, the default is capture first, update the skill later. Do not rewrite this skill mid-review unless the user explicitly asks for that change or the current guidance is actively causing incorrect review output.
@@ -110,6 +112,14 @@ Graduation rule:
 Do not interrupt an active PR review to reconcile pattern notes.
 
 After the review is complete, inspect only the `Candidate Patterns` section of `references/review-patterns.md`. Prefer a targeted text search or helper script instead of reading the whole file when possible.
+
+Use this helper script when you want a compact summary or cleanup signal:
+
+```bash
+node "scripts/memory/review-memory.mjs"
+node "scripts/memory/review-memory.mjs" --section current
+node "scripts/memory/review-memory.mjs" --section candidate
+```
 
 Run a pattern cleanup pass only when one of these is true:
 
@@ -208,6 +218,7 @@ Omit `--title` and `--description` to read. Provide either or both to update.
 | Read or update PR title/description | `scripts/bitbucket/update-pr.mjs` |
 | List pull requests | `scripts/bitbucket/list-prs.mjs` |
 | Fetch Jira issue | `scripts/jira/get-jira-issue.mjs` |
+| Summarize review memory / cleanup signal | `scripts/memory/review-memory.mjs` |
 
 ## When to Load References
 
