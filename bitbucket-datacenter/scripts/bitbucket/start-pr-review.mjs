@@ -1,6 +1,6 @@
 /**
  * Starts a PR review session by collecting PR metadata, changed files,
- * existing activities/comments, optional Jira context, and optional full diff.
+ * existing activities/comments, and optional full diff.
  *
  * Usage: node start-pr-review.mjs --prId <id> --repo <repo> [--project <key>] [--noDiff]
  */
@@ -82,38 +82,6 @@ function formatActivities(data) {
   return lines.join('\n');
 }
 
-function formatJira(issue) {
-  const f = issue.fields;
-  return `Issue: ${issue.key}
-Summary: ${f.summary}
-Type: ${f.issuetype?.name ?? 'Unknown'}
-Status: ${f.status?.name ?? 'Unknown'}${f.priority ? `\nPriority: ${f.priority.name}` : ''}
-${f.description ? `\nDescription:\n${f.description}` : '\nDescription: (No description provided)'}`;
-}
-
-async function optionalJiraRequest(endpoint) {
-  if (!process.env.JIRA_BASE_URL) {
-    throw new Error('JIRA_BASE_URL environment variable is not set.');
-  }
-
-  const jiraBaseUrl = process.env.JIRA_BASE_URL.replace(/\/$/, '');
-  const url = `${jiraBaseUrl}/rest/api/2${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${process.env.JIRA_TOKEN}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Jira API error ${res.status} ${res.statusText}: ${err}`);
-  }
-
-  return res.json();
-}
-
 const [pr, changes, activities, diffText] = await Promise.all([
   bbRequest(base),
   bbPaginatedRequest(`${base}/changes`, { maxItems: maxFiles }),
@@ -123,21 +91,18 @@ const [pr, changes, activities, diffText] = await Promise.all([
 
 const files = (changes.values || []).map((f, i) => `${i + 1}. ${pathFromChange(f)} (${f.type || 'MODIFIED'})`);
 const jiraKey = jiraKeyFrom(`${pr.title}\n${pr.description || ''}`);
-let jiraSection = 'No Jira key found in PR title or description.';
 const changedFilesSummary = changes.truncated
   ? `Showing first ${changes.values.length} of at least ${changes.total} changed files. Re-run with --full or a higher --maxFiles value for the complete list.`
   : `Showing all ${changes.total} changed files.`;
-
-if (jiraKey && process.env.JIRA_TOKEN) {
-  try {
-    const issue = await optionalJiraRequest(`/issue/${jiraKey}`);
-    jiraSection = formatJira(issue);
-  } catch (error) {
-    jiraSection = `Found Jira key ${jiraKey}, but Jira lookup failed: ${error.message}`;
-  }
-} else if (jiraKey) {
-  jiraSection = `Found Jira key ${jiraKey}. Set JIRA_TOKEN to fetch issue details.`;
-}
+const reviewSteps = [
+  'Load references/review-workflow.md before starting the review, and follow it during the review.',
+  jiraKey ? `Load Jira issue details with get-jira-issue.mjs --issueKey ${jiraKey} if issue context is needed.` : null,
+  'Review the diff and changed-files checklist before commenting.',
+  'Use get-file-diff.mjs for any file missing from this output or needing a narrower view.',
+  'Use get-file-content.mjs only when the diff is insufficient to verify a technical claim.',
+  'Re-run with --full, --maxFiles, or --maxActivities when the review context is intentionally capped.',
+  'Load references/commenting-guide.md before posting, replying to, editing, resolving, or reopening comments.',
+].filter(Boolean).map((step, index) => `${index + 1}. ${step}`);
 
 console.log(`# Pull Request Review: PR #${pr.id}
 
@@ -153,9 +118,6 @@ Updated: ${new Date(pr.updatedDate).toISOString()}
 Description:
 ${pr.description || 'No description'}
 
-## Jira Context
-${jiraSection}
-
 ## Changed Files Checklist
 - Use this list to track which files have been reviewed.
 ${changedFilesSummary}
@@ -168,9 +130,4 @@ ${formatActivities(activities)}
 ${includeDiff ? annotatedDiff(diffText) || '(no diff content available)' : 'Skipped because --noDiff was set.'}
 
 ## Review Next Steps
-1. Review the diff and changed-files checklist before commenting.
-2. Use get-file-diff.mjs for any file missing from this output or needing a narrower view.
-3. Use get-file-content.mjs only when the diff is insufficient to verify a technical claim.
-4. Re-run with --full, --maxFiles, or --maxActivities when the review context is intentionally capped.
-5. Load references/review-workflow.md for review expectations.
-6. Load references/commenting-guide.md before posting, replying to, editing, resolving, or reopening comments.`);
+${reviewSteps.join('\n')}`);
