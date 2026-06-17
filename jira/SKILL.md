@@ -39,6 +39,7 @@ Search issues using JQL:
 ```bash
 node "scripts/jira/search-issues.mjs" --jql "project = PROJ AND status = Open ORDER BY updated DESC"
 node "scripts/jira/search-issues.mjs" --jql "assignee = currentUser() ORDER BY updated DESC" --maxResults 10
+node "scripts/jira/search-issues.mjs" --jql "project = PROJ" --maxResults 50 --startAt 50
 ```
 
 Create a new issue:
@@ -113,6 +114,7 @@ List all accessible projects:
 
 ```bash
 node "scripts/jira/list-projects.mjs"
+node "scripts/jira/list-projects.mjs" --maxResults 50 --startAt 50
 ```
 
 ## Script Routing
