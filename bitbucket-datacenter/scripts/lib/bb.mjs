@@ -6,6 +6,10 @@
  *   bearer token           -> Bearer <token>
  *   username:app_password  -> Basic base64(username:app_password)
  */
+import { spawnSync } from 'node:child_process';
+import { writeFileSync, unlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export const DEFAULT_PROJECT = 'PROJ';
 
@@ -204,4 +208,41 @@ export function require_args(args, ...names) {
       process.exit(1);
     }
   }
+}
+
+/**
+ * Fetches both sides of a COPY or RENAME and returns an annotated diff string
+ * by running `diff -u` locally. This avoids the BitBucket diff API treating
+ * COPY/RENAME files as new files compared against /dev/null.
+ *
+ * @param {string} project
+ * @param {string} repo
+ * @param {string} dstPath  - destination file path (new path)
+ * @param {string} srcPath  - source file path (copy/rename origin)
+ * @param {string} baseCommit - target branch commit (where srcPath lives)
+ * @param {string} headCommit - feature branch commit (where dstPath lives)
+ */
+export async function buildCopyMoveDiff(project, repo, dstPath, srcPath, baseCommit, headCommit) {
+  const [srcContent, dstContent] = await Promise.all([
+    bbRequest(`/projects/${project}/repos/${repo}/raw/${srcPath}?at=${baseCommit}`, { textResponse: true }),
+    bbRequest(`/projects/${project}/repos/${repo}/raw/${dstPath}?at=${headCommit}`, { textResponse: true }),
+  ]);
+
+  const id = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const srcFile = join(tmpdir(), `bb-src-${id}.tmp`);
+  const dstFile = join(tmpdir(), `bb-dst-${id}.tmp`);
+  writeFileSync(srcFile, srcContent);
+  writeFileSync(dstFile, dstContent);
+
+  const result = spawnSync('diff', ['-u', srcFile, dstFile], { encoding: 'utf8' });
+  try { unlinkSync(srcFile); unlinkSync(dstFile); } catch {}
+
+  if (result.status === 2) throw new Error(`diff failed for ${dstPath}: ${result.stderr}`);
+
+  // Replace temp paths in --- / +++ header lines with real repo paths
+  const rawDiff = result.stdout
+    .replace(/^--- .+$/m, `--- src://${srcPath}`)
+    .replace(/^\+\+\+ .+$/m, `+++ dst://${dstPath}`);
+
+  return annotatedDiff(`diff --git src://${srcPath} dst://${dstPath}\n` + rawDiff);
 }
